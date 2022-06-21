@@ -16,51 +16,9 @@
 #include "Menu/Setup.h"
 
 //Target lib here
-#define targetLibName OBFUSCATE("libFileA.so")
+#define targetLibName OBFUSCATE("libil2cpp.so")
 
 #include "Includes/Macros.h"
-
-bool feature1, feature2, featureHookToggle, Health;
-int sliderValue = 1, level = 0;
-void *instanceBtn;
-
-// Hooking examples. Assuming you know how to write hook
-void (*AddMoneyExample)(void *instance, int amount);
-
-bool (*old_get_BoolExample)(void *instance);
-bool get_BoolExample(void *instance) {
-    if (instance != NULL && featureHookToggle) {
-        return true;
-    }
-    return old_get_BoolExample(instance);
-}
-
-float (*old_get_FloatExample)(void *instance);
-float get_FloatExample(void *instance) {
-    if (instance != NULL && sliderValue > 1) {
-        return (float) sliderValue;
-    }
-    return old_get_FloatExample(instance);
-}
-
-int (*old_Level)(void *instance);
-int Level(void *instance) {
-    if (instance != NULL && level) {
-        return (int) level;
-    }
-    return old_Level(instance);
-}
-
-void (*old_FunctionExample)(void *instance);
-void FunctionExample(void *instance) {
-    instanceBtn = instance;
-    if (instance != NULL) {
-        if (Health) {
-            *(int *) ((uint64_t) instance + 0x48) = 999;
-        }
-    }
-    return old_FunctionExample(instance);
-}
 
 // we will run our hacks in a new thread so our while loop doesn't block process main thread
 void *hack_thread(void *) {
@@ -80,45 +38,9 @@ void *hack_thread(void *) {
     LOGI(OBFUSCATE("%s has been loaded"), (const char *) targetLibName);
 
 #if defined(__aarch64__) //To compile this code for arm64 lib only. Do not worry about greyed out highlighting code, it still works
-    // Hook example. Comment out if you don't use hook
-    // Strings in macros are automatically obfuscated. No need to obfuscate!
-    HOOK("str", FunctionExample, old_FunctionExample);
-    HOOK_LIB("libFileB.so", "0x123456", FunctionExample, old_FunctionExample);
-    HOOK_NO_ORIG("0x123456", FunctionExample);
-    HOOK_LIB_NO_ORIG("libFileC.so", "0x123456", FunctionExample);
-    HOOKSYM("__SymbolNameExample", FunctionExample, old_FunctionExample);
-    HOOKSYM_LIB("libFileB.so", "__SymbolNameExample", FunctionExample, old_FunctionExample);
-    HOOKSYM_NO_ORIG("__SymbolNameExample", FunctionExample);
-    HOOKSYM_LIB_NO_ORIG("libFileB.so", "__SymbolNameExample", FunctionExample);
 
-    // Patching offsets directly. Strings are automatically obfuscated too!
-    PATCH("0x20D3A8", "00 00 A0 E3 1E FF 2F E1");
-    PATCH_LIB("libFileB.so", "0x20D3A8", "00 00 A0 E3 1E FF 2F E1");
-
-    AddMoneyExample = (void(*)(void *,int))getAbsoluteAddress(targetLibName, 0x123456);
 
 #else //To compile this code for armv7 lib only.
-
-    // Hook example. Comment out if you don't use hook
-    // Strings in macros are automatically obfuscated. No need to obfuscate!
-    HOOK("str", FunctionExample, old_FunctionExample);
-    HOOK_LIB("libFileB.so", "0x123456", FunctionExample, old_FunctionExample);
-    HOOK_NO_ORIG("0x123456", FunctionExample);
-    HOOK_LIB_NO_ORIG("libFileC.so", "0x123456", FunctionExample);
-    HOOKSYM("__SymbolNameExample", FunctionExample, old_FunctionExample);
-    HOOKSYM_LIB("libFileB.so", "__SymbolNameExample", FunctionExample, old_FunctionExample);
-    HOOKSYM_NO_ORIG("__SymbolNameExample", FunctionExample);
-    HOOKSYM_LIB_NO_ORIG("libFileB.so", "__SymbolNameExample", FunctionExample);
-
-    // Patching offsets directly. Strings are automatically obfuscated too!
-    PATCH("0x20D3A8", "00 00 A0 E3 1E FF 2F E1");
-    PATCH_LIB("libFileB.so", "0x20D3A8", "00 00 A0 E3 1E FF 2F E1");
-
-    //Restore changes to original
-    RESTORE("0x20D3A8");
-    RESTORE_LIB("libFileB.so", "0x20D3A8");
-
-    AddMoneyExample = (void (*)(void *, int)) getAbsoluteAddress(targetLibName, 0x123456);
 
     LOGI(OBFUSCATE("Done"));
 #endif
@@ -210,77 +132,6 @@ void Changes(JNIEnv *env, jclass clazz, jobject obj,
 
     switch (featNum) {
         case 0:
-            // A much simpler way to patch hex via KittyMemory without need to specify the struct and len. Spaces or without spaces are fine
-            // ARMv7 assembly example
-            // MOV R0, #0x0 = 00 00 A0 E3
-            // BX LR = 1E FF 2F E1
-            PATCH_LIB_SWITCH("libil2cpp.so", "0x100000", "00 00 A0 E3 1E FF 2F E1", boolean);
-            break;
-        case 100:
-            //Reminder that the strings are auto obfuscated
-            //Switchable patch
-            PATCH_SWITCH("0x400000", "00 00 A0 E3 1E FF 2F E1", boolean);
-            PATCH_LIB_SWITCH("libil2cpp.so", "0x200000", "00 00 A0 E3 1E FF 2F E1", boolean);
-            PATCH_SYM_SWITCH("_SymbolExample", "00 00 A0 E3 1E FF 2F E1", boolean);
-            PATCH_LIB_SYM_SWITCH("libNativeGame.so", "_SymbolExample", "00 00 A0 E3 1E FF 2F E1", boolean);
-
-            //Restore patched offset to original
-            RESTORE("0x400000");
-            RESTORE_LIB("libil2cpp.so", "0x400000");
-            RESTORE_SYM("_SymbolExample");
-            RESTORE_LIB_SYM("libil2cpp.so", "_SymbolExample");
-            break;
-        case 110:
-            break;
-        case 1:
-            if (value >= 1) {
-                sliderValue = value;
-            }
-            break;
-        case 2:
-            switch (value) {
-                //For noobies
-                case 0:
-                    RESTORE("0x0");
-                    break;
-                case 1:
-                    PATCH("0x0", "01 00 A0 E3 1E FF 2F E1");
-                    break;
-                case 2:
-                    PATCH("0x0", "02 00 A0 E3 1E FF 2F E1");
-                    break;
-            }
-            break;
-        case 3:
-            switch (value) {
-                case 0:
-                    LOGD(OBFUSCATE("Selected item 1"));
-                    break;
-                case 1:
-                    LOGD(OBFUSCATE("Selected item 2"));
-                    break;
-                case 2:
-                    LOGD(OBFUSCATE("Selected item 3"));
-                    break;
-            }
-            break;
-        case 4:
-            // Since we have instanceBtn as a field, we can call it out of Update hook function
-            if (instanceBtn != NULL)
-                AddMoneyExample(instanceBtn, 999999);
-            // Toast(env, obj, OBFUSCATE("Button pressed"), ToastLength::LENGTH_SHORT);
-            break;
-        case 5:
-            break;
-        case 6:
-            featureHookToggle = boolean;
-            break;
-        case 7:
-            level = value;
-            break;
-        case 8:
-            break;
-        case 9:
             break;
     }
 }
